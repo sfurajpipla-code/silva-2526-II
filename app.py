@@ -7,7 +7,7 @@ import requests
 import altair as alt
 import polars as pl
 from shinywidgets import render_widget
-
+import httpx
 
 DataUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTuYSbC_H3vtCJlKiYdrO-22_1LkgegEJ1_rYkIBdpxhDlz55Nv8ZYZHP4b9expHxfn_aY8VeeLzgLL/pub?gid=1223006997&single=true&output=csv"
 def get_live_data(url):
@@ -39,9 +39,18 @@ def get_live_data2(url):
     except Exception as e:
         print(f"An error occurred: {e}")
         return pl.DataFrame()
+
+async def fetch_data_async(url):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url)
+        if response.status_code == 200:
+            # We use io.BytesIO to feed the raw bytes to Polars
+            return pl.read_csv(io.BytesIO(response.content), infer_schema_length=20000).rechunk()
+        else:
+            return pl.DataFrame()
     
 
-df = get_live_data2(DataUrl)
+df = fetch_data_async(DataUrl)
 df2 = df.rename({"HEIGHT(M)":"Height_of_tree_in_meter", "GIRTH(CM)":"Girth_of_tree_in_cmeter"})
 
 
