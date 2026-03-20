@@ -2,13 +2,14 @@ from shiny.express import ui,render,input
 from shiny import ui as ui_core 
 from shiny import reactive
 from io import StringIO
+import io
 import requests
 import altair as alt
 import polars as pl
 from shinywidgets import render_widget
 
 
-DataUrl = "https://raw.githubusercontent.com/sfurajpipla-code/silva-res-2025-26/refs/heads/main/final_alive_clean.csv"
+DataUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTuYSbC_H3vtCJlKiYdrO-22_1LkgegEJ1_rYkIBdpxhDlz55Nv8ZYZHP4b9expHxfn_aY8VeeLzgLL/pub?gid=1223006997&single=true&output=csv"
 def get_live_data(url):
     response = requests.get(url)
     # Check if Google actually returned the data
@@ -21,8 +22,26 @@ def get_live_data(url):
     else:
         return pl.DataFrame() # Return empty if Google is down
     
+def get_live_data2(url):
+    try:
+        response = requests.get(url)
+        # Check if the request was successful
+        if response.status_code == 200:
+            # Use response.content (bytes) + BytesIO for a more robust load
+            return pl.read_csv(
+                io.BytesIO(response.content),
+                infer_schema_length=20000,
+                truncate_ragged_lines=True
+            )
+        else:
+            print(f"Failed to fetch data: Status {response.status_code}")
+            return pl.DataFrame()
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return pl.DataFrame()
+    
 
-df = pl.read_csv(source="final_alive_clean.csv", infer_schema_length=20000)
+df = get_live_data2(DataUrl)
 df2 = df.rename({"HEIGHT(M)":"Height_of_tree_in_meter", "GIRTH(CM)":"Girth_of_tree_in_cmeter"})
 
 
