@@ -2,26 +2,33 @@ from shiny.express import ui,render,input
 from shiny import ui as ui_core 
 from shiny import reactive
 from io import StringIO
-import io
+
 import requests
 import altair as alt
 import polars as pl
 from shinywidgets import render_widget
 
-mydataurl = "https://script.google.com/macros/s/AKfycbx7nkMFpS-_es5K06cHVB1CIC8AAzrzsmr-Qyxr3ufL9SiEzWGu6S0kQINehUIm4CDkOA/exec"
+myurl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQaVBNLvbaPYyKmt8WZ5ECI49jTuQmHO2ZVtUm0p0GpMbt3A9E6IrDgchIQx_T8kLnL4W5xp05PIO0k/pub?gid=346820640&single=true&output=csv"
 
-def get_json_data(url):
-    
-    response= requests.get(url)
-    data =response.json()['data']
-    
-       
-    return pl.DataFrame(data)   
+
+def load_data():
+    url = myurl
+    res = requests.get(url)
+    if res:
+        csvString = res.text
+        csvfile = StringIO(csvString)
+        df = pl.read_csv(csvfile, infer_schema_length= 20000)
+        return df
+
     
 
-df= get_json_data(mydataurl)
+df = load_data()
+
+
+
 
 df2 = df.rename({"HEIGHT(M)":"Height_of_tree_in_meter", "GIRTH(CM)":"Girth_of_tree_in_cmeter"})
+
 
 
 @reactive.calc
