@@ -7,9 +7,17 @@ import requests
 import altair as alt
 import polars as pl
 from shinywidgets import render_widget
+from pyodide.http import open_url
+
+
 
 myurl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQaVBNLvbaPYyKmt8WZ5ECI49jTuQmHO2ZVtUm0p0GpMbt3A9E6IrDgchIQx_T8kLnL4W5xp05PIO0k/pub?gid=346820640&single=true&output=csv"
 
+def load_data1():
+    # open_url works better inside the browser (GitHub Pages/Shinylive)
+    res = open_url(myurl)
+    csvString = res.read()
+    return pl.read_csv(StringIO(csvString), infer_schema_length= 20000)
 
 def load_data():
     url = myurl
@@ -17,12 +25,12 @@ def load_data():
     if res:
         csvString = res.text
         csvfile = StringIO(csvString)
-        df = pl.read_csv(csvfile, infer_schema_length= 20000)
-        return df
+        dfraw = pl.read_csv(csvfile, infer_schema_length= 20000)
+        return dfraw
 
     
 
-df = load_data()
+df = load_data1()
 
 
 
